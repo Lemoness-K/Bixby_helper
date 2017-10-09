@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@layout/dialog_style">
+
+    <com.google.android.gms.samples.vision.face.facetracker.ui.camera.CameraSourcePreview
+        android:id="@+id/preview"
+        android:layout_width="320dp"
+        android:layout_height="240dp"
+        android:layout_weight="center">
+
+    </com.google.android.gms.samples.vision.face.facetracker.ui.camera.CameraSourcePreview>
+
+</LinearLayout>

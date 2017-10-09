@@ -20,6 +20,8 @@ public class Catch_Bixbi_Service extends IntentService {
     // TODO: Rename parameters
     private static final String EXTRA_PARAM1 = "com.superrookie.bixbyhelper.extra.PARAM1";
 
+    private static Context mContext = null;
+
     public Catch_Bixbi_Service() {
         super("Catch_Bixbi_Service");
     }
@@ -31,11 +33,15 @@ public class Catch_Bixbi_Service extends IntentService {
      * @see IntentService
      */
     // TODO: Customize helper method
-    public static void startActionFoo(Context context, String param1, String param2) {
+    public static void startActionFoo(Context context, String param1) {
         Intent intent = new Intent(context, Catch_Bixbi_Service.class);
         intent.setAction(ACTION_FOO);
         intent.putExtra(EXTRA_PARAM1, param1);
         context.startService(intent);
+
+        mContext = context;
+
+        Toast.makeText(context, "Test start", Toast.LENGTH_SHORT).show();
     }
 
     @Override
@@ -55,6 +61,7 @@ public class Catch_Bixbi_Service extends IntentService {
      */
     private void handleActionFoo(String param1) {
         // TODO: Handle action Foo
-        Toast.makeText(this, "Test : " + param1, Toast.LENGTH_SHORT);
+        Toast.makeText(mContext, "Test : " + param1, Toast.LENGTH_SHORT).show();
+        this.stopSelf();
     }
 }
