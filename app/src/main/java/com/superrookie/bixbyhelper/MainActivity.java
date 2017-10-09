@@ -31,31 +31,10 @@ public class MainActivity extends AppCompatActivity {
         List<ActivityManager.RunningAppProcessInfo> procInfos = activityManager.getRunningAppProcesses();
         for(int i = 0; i < procInfos.size(); i++){
             res += procInfos.get(i).processName;
-            res += '\n';
         }
 
         return res;
     }
-
-    /**
-     * Restarts the camera.
-     */
-    @Override
-    protected void onResume() {
-        super.onResume();
-
-        if(mCameraDialog != null) mCameraDialog.startCameraSource();
-    }
-
-    /**
-     * Stops the camera.
-     */
-    @Override
-    protected void onPause() {
-        super.onPause();
-        if(mCameraDialog != null) mCameraDialog.mPreview.stop();
-    }
-
     /**
      * Releases the resources associated with the camera source, the associated detector, and the
      * rest of the processing pipeline.
@@ -63,7 +42,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (mCameraDialog.mCameraSource != null) {
+        if (mCameraDialog != null && mCameraDialog.mCameraSource != null) {
             mCameraDialog.mCameraSource.release();
         }
     }
@@ -136,7 +115,7 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
                 Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();
-                mBixbyService.startActionFoo(mContext, "test");
+                mBixbyService.startActionFoo(mContext, mCameraDialog, "test");
             }
         });
 
