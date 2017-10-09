@@ -22,7 +22,7 @@
             android:theme="@style/AppTheme.NoActionBar" />
 
         <service
-            android:name=".Catch_Bixbi_Service"
+            android:name="Catch_Bixbi_Service"
             android:exported="false"></service>
     </application>
 
