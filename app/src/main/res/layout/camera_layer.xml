@@ -15,6 +15,7 @@
         android:paddingBottom="10dp"
         android:text="@string/dialog_title"
         android:textSize="25dp"
+        android:textColor="@color/colorPrimaryDark"
         android:textAlignment="center" />
 
     <com.superrookie.bixbyhelper.ui.camera.CameraSourcePreview

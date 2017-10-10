@@ -1,10 +1,17 @@
 package com.superrookie.bixbyhelper;
 
+import android.app.ActivityManager;
 import android.app.IntentService;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Intent;
 import android.content.Context;
+import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.TaskStackBuilder;
 import android.util.Log;
 import android.widget.Toast;
+
+import java.util.List;
 
 /**
  * An {@link IntentService} subclass for handling asynchronous task requests in
@@ -14,20 +21,24 @@ import android.widget.Toast;
  * helper methods.
  */
 public class Catch_Bixbi_Service extends IntentService {
-    // TODO: Rename actions, choose action names that describe tasks that this
-    // IntentService can perform, e.g. ACTION_FETCH_NEW_ITEMS
-    private static final String ACTION_FOO = "com.superrookie.bixbyhelper.action.FOO";
 
-    // TODO: Rename parameters
-    private static final String EXTRA_PARAM1 = "com.superrookie.bixbyhelper.extra.PARAM1";
-
-    private static Context mContext = null;
-//    private static Camera_Dialog mCameraDialog;
+    private static Context mContext;
 
     public Catch_Bixbi_Service()
     {
         super("Catch_Bixbi_Service");
-//        mCameraDialog = camera;
+    }
+
+    private boolean isBixbyRunning(){
+        ActivityManager am = (ActivityManager)getApplicationContext().getSystemService(Context.ACTIVITY_SERVICE);
+        List<ActivityManager.RunningServiceInfo> rs = am.getRunningServices(1000);
+
+        for(int i=0; i<rs.size(); i++){
+            ActivityManager.RunningServiceInfo rsi = rs.get(i);
+            if(rsi.service.getClassName().equals("com.samsung.android.bixby.agent.ExecutorManagerService")) return true;
+            Log.d("BixbyFinder","get Bixby Class name!");
+        }
+        return false;
     }
 
     /**
@@ -37,37 +48,37 @@ public class Catch_Bixbi_Service extends IntentService {
      * @see IntentService
      */
     // TODO: Customize helper method
-    public static void startActionFoo(Context context, String param1) {
+    public static void startHelper(Context context) {
+        mContext = context;
+
         Intent intent = new Intent(context, Catch_Bixbi_Service.class);
-        intent.setAction(ACTION_FOO);
-        intent.putExtra(EXTRA_PARAM1, param1);
         context.startService(intent);
 
-        mContext = context;
-//        mCameraDialog = camera;
-
-        Toast.makeText(context, "Test start", Toast.LENGTH_SHORT).show();
+        Toast.makeText(context, "Bixby_Helper Service start", Toast.LENGTH_SHORT).show();
     }
 
     @Override
     protected void onHandleIntent(Intent intent) {
-        if (intent != null) {
-            final String action = intent.getAction();
-            if (ACTION_FOO.equals(action)) {
-                final String param1 = intent.getStringExtra(EXTRA_PARAM1);
-                handleActionFoo(param1);
+        boolean sw = true;
+        boolean hasBixby = false;
+        Intent intn = new Intent(this, DialogActivity.class);
+
+        while(true)
+        {
+            hasBixby = isBixbyRunning();
+            if(hasBixby && sw)
+            {
+                startActivity(intn);
+                sw = false;
+            }else if(!hasBixby && !sw){
+                sw = true;
+            }
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                break;
             }
         }
-    }
-
-    /**
-     * Handle action Foo in the provided background thread with the provided
-     * parameters.
-     */
-    private void handleActionFoo(String param1) {
-        // TODO: Handle action Foo
-        Toast.makeText(mContext, "Test : " + param1, Toast.LENGTH_SHORT).show();
-//        mCameraDialog.show();
-//        this.stopSelf();
+        Toast.makeText(this, "Bixby_Helper Service dead", Toast.LENGTH_SHORT).show();
     }
 }

@@ -2,20 +2,20 @@ package com.superrookie.bixbyhelper;
 
 import android.Manifest;
 import android.app.Activity;
-import android.app.Dialog;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
-import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
@@ -28,13 +28,7 @@ import com.superrookie.bixbyhelper.ui.camera.GraphicOverlay;
 
 import java.io.IOException;
 
-/**
- * Created by Home on 2017-10-10.
- */
-
-public class Custom_Dialog extends Dialog {
-    private Context mContext;
-    private Activity mActivity;
+public class DialogActivity extends AppCompatActivity {
 
     private CameraSource mCameraSource;
     private CameraSourcePreview mPreview;
@@ -46,22 +40,9 @@ public class Custom_Dialog extends Dialog {
     // permission request codes need to be < 256
     private static final int RC_HANDLE_CAMERA_PERM = 2;
 
-    public Custom_Dialog(@NonNull Context context) {
-        super(context);
-        mContext = context;
-        mActivity = null;
-        checkCameraPermission();
-    }
-    public Custom_Dialog(@NonNull Context context, Activity activity) {
-        super(context);
-        mContext = context;
-        mActivity = activity;
-        checkCameraPermission();
-    }
-
     @Override
-    public void show() {
-        super.show();
+    public void onResume() {
+        super.onResume();
 
         // setting camera
         mPreview = (CameraSourcePreview) findViewById(R.id.preview);
@@ -70,15 +51,15 @@ public class Custom_Dialog extends Dialog {
     }
 
     @Override
-    public void hide() {
-        super.hide();
+    public void onPause() {
+        super.onPause();
 
         mPreview.stop();
     }
 
     @Override
-    public void dismiss() {
-        super.dismiss();
+    public void onDestroy() {
+        super.onDestroy();
 
         if(mCameraSource != null)
             mCameraSource.release();
@@ -102,9 +83,11 @@ public class Custom_Dialog extends Dialog {
         btn.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view) {
-                dismiss();
+                finish();
             }
         });
+
+        checkCameraPermission();
 
         // setting camera
         if (mHasPermission == PackageManager.PERMISSION_GRANTED) {
@@ -114,11 +97,57 @@ public class Custom_Dialog extends Dialog {
         }
     }
 
+    /**
+     * Callback for the result from requesting permissions. This method
+     * is invoked for every call on {@link #requestPermissions(String[], int)}.
+     * <p>
+     * <strong>Note:</strong> It is possible that the permissions request interaction
+     * with the user is interrupted. In this case you will receive empty permissions
+     * and results arrays which should be treated as a cancellation.
+     * </p>
+     *
+     * @param requestCode  The request code passed in {@link #requestPermissions(String[], int)}.
+     * @param permissions  The requested permissions. Never null.
+     * @param grantResults The grant results for the corresponding permissions
+     *                     which is either {@link PackageManager#PERMISSION_GRANTED}
+     *                     or {@link PackageManager#PERMISSION_DENIED}. Never null.
+     * @see #requestPermissions(String[], int)
+     */
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        if (requestCode != 2) {
+            Log.d("FaceTracker", "Got unexpected permission result: " + requestCode);
+            super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+            return;
+        }
+
+        if (grantResults.length != 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            Log.d("FaceTracker", "Camera permission granted - initialize the camera source");
+            // we have permission, so create the camerasource
+            return;
+        }
+
+        Log.e("FaceTracker", "Permission not granted: results len = " + grantResults.length +
+                " Result code = " + (grantResults.length > 0 ? grantResults[0] : "(empty)"));
+
+        DialogInterface.OnClickListener listener = new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                finish();
+            }
+        };
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Face Tracker sample")
+                .setMessage("This application cannot run because it does not have the camera permission.  The application will now exit.")
+                .setPositiveButton(R.string.ok, listener)
+                .show();
+    }
+
     private void checkCameraPermission(){
 
         // Check for the camera permission before accessing the camera.  If the
         // permission is not granted yet, request permission.
-        mHasPermission = ActivityCompat.checkSelfPermission(mContext, Manifest.permission.CAMERA);
+        mHasPermission = ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA);
         if(mHasPermission != PackageManager.PERMISSION_GRANTED){
             requestCameraPermission();
         }
@@ -134,13 +163,13 @@ public class Custom_Dialog extends Dialog {
 
         final String[] permissions = new String[]{Manifest.permission.CAMERA};
 
-        if (!ActivityCompat.shouldShowRequestPermissionRationale(mActivity,
+        if (!ActivityCompat.shouldShowRequestPermissionRationale(this,
                 Manifest.permission.CAMERA)) {
-            ActivityCompat.requestPermissions(mActivity, permissions, RC_HANDLE_CAMERA_PERM);
+            ActivityCompat.requestPermissions(this, permissions, RC_HANDLE_CAMERA_PERM);
             return;
         }
 
-        final Activity thisActivity = mActivity;
+        final Activity thisActivity = this;
 
         View.OnClickListener listener = new View.OnClickListener() {
             @Override
@@ -163,13 +192,13 @@ public class Custom_Dialog extends Dialog {
      */
     private void createCameraSource() {
 
-        Context context = mContext;
+        Context context = this;
         com.google.android.gms.vision.face.FaceDetector detector = new com.google.android.gms.vision.face.FaceDetector.Builder(context)
                 .setClassificationType(com.google.android.gms.vision.face.FaceDetector.ALL_CLASSIFICATIONS)
                 .build();
 
         detector.setProcessor(
-                new MultiProcessor.Builder<>(new Custom_Dialog.GraphicFaceTrackerFactory())
+                new MultiProcessor.Builder<>(new DialogActivity.GraphicFaceTrackerFactory())
                         .build());
 
         if (!detector.isOperational()) {
@@ -203,12 +232,11 @@ public class Custom_Dialog extends Dialog {
     public void startCameraSource() {
 
         // check that the device has play services available.
-        int code = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(mContext);
+        int code = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(this);
         if (code != ConnectionResult.SUCCESS) {
-            Dialog dlg =
-                    GoogleApiAvailability.getInstance().getErrorDialog(mActivity,
-                            code, RC_HANDLE_GMS);
-            dlg.show();
+            Snackbar.make(mGraphicOverlay, "Connect falied",
+                    Snackbar.LENGTH_LONG)
+                    .show();
         }
 
         if (mCameraSource != null) {
@@ -233,7 +261,7 @@ public class Custom_Dialog extends Dialog {
     private class GraphicFaceTrackerFactory implements MultiProcessor.Factory<Face> {
         @Override
         public Tracker<Face> create(Face face) {
-            return new GraphicFaceTracker(mGraphicOverlay);
+            return new DialogActivity.GraphicFaceTracker(mGraphicOverlay);
         }
     }
     /**
