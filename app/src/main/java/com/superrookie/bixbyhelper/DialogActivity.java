@@ -40,6 +40,8 @@ public class DialogActivity extends AppCompatActivity {
     // permission request codes need to be < 256
     private static final int RC_HANDLE_CAMERA_PERM = 2;
 
+    public float mFaceHappiness;
+
     @Override
     public void onResume() {
         super.onResume();
@@ -272,6 +274,10 @@ public class DialogActivity extends AppCompatActivity {
         private GraphicOverlay mOverlay;
         private FaceGraphic mFaceGraphic;
 
+        private int count = 0;
+        private float mSum = 0.0f;
+        private float mAvg = 0.0f;
+
         GraphicFaceTracker(GraphicOverlay overlay) {
             mOverlay = overlay;
             mFaceGraphic = new FaceGraphic(overlay);
@@ -292,6 +298,11 @@ public class DialogActivity extends AppCompatActivity {
         public void onUpdate(com.google.android.gms.vision.face.FaceDetector.Detections<Face> detectionResults, Face face) {
             mOverlay.add(mFaceGraphic);
             mFaceGraphic.updateFace(face);
+            mFaceHappiness = mFaceGraphic.mFaceHappiness;
+            if(mFaceHappiness > 0){
+                count++;
+                mSum += mFaceHappiness;
+            }
         }
 
         /**
@@ -310,6 +321,7 @@ public class DialogActivity extends AppCompatActivity {
          */
         @Override
         public void onDone() {
+            Log.d("avgScore"," is : " + mSum/count);
             mOverlay.remove(mFaceGraphic);
         }
     }

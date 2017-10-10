@@ -2,12 +2,10 @@ package com.superrookie.bixbyhelper;
 
 import android.app.ActivityManager;
 import android.app.IntentService;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.Intent;
 import android.content.Context;
-import android.support.v4.app.NotificationCompat;
-import android.support.v4.app.TaskStackBuilder;
+import android.content.IntentFilter;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -35,7 +33,7 @@ public class Catch_Bixbi_Service extends IntentService {
 
         for(int i=0; i<rs.size(); i++){
             ActivityManager.RunningServiceInfo rsi = rs.get(i);
-            if(rsi.service.getClassName().equals("com.samsung.android.bixby.agent.ExecutorManagerService")) return true;
+            if(rsi.service.getClassName().equals("com.samsung.android.bixby.WinkService")) return true;
             Log.d("BixbyFinder","get Bixby Class name!");
         }
         return false;
@@ -61,24 +59,38 @@ public class Catch_Bixbi_Service extends IntentService {
     protected void onHandleIntent(Intent intent) {
         boolean sw = true;
         boolean hasBixby = false;
-        Intent intn = new Intent(this, DialogActivity.class);
+        mContext = this;
+        IntentFilter itf = new IntentFilter("android.provider.Telephony.SMS_RECEIVED");
+        itf.setPriority(9999);
 
         while(true)
         {
-            hasBixby = isBixbyRunning();
-            if(hasBixby && sw)
-            {
-                startActivity(intn);
-                sw = false;
-            }else if(!hasBixby && !sw){
-                sw = true;
-            }
+            BCaster bc = new BCaster();
+            registerReceiver(bc, itf);
             try {
-                Thread.sleep(1000);
+                Thread.sleep(600000);
             } catch (InterruptedException e) {
+                bc.clearAbortBroadcast();
+                unregisterReceiver(bc);
+                bc = null;
                 break;
             }
+            bc.clearAbortBroadcast();
+            unregisterReceiver(bc);
+            bc = null;
         }
         Toast.makeText(this, "Bixby_Helper Service dead", Toast.LENGTH_SHORT).show();
+    }
+
+    public class BCaster extends BroadcastReceiver{
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if(intent.getAction().equals("android.provider.Telephony.SMS_RECEIVED")){
+                Log.d("mybroadcastlistener", "get msg");
+                Intent intn = new Intent(mContext, DialogActivity.class);
+                startActivity(intn);
+            }
+        }
     }
 }
