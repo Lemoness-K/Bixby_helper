@@ -4,6 +4,7 @@ import android.app.ActivityManager;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
@@ -23,7 +24,7 @@ public class MainActivity extends AppCompatActivity {
 
     private Catch_Bixbi_Service mBixbyService;
     private Context mContext = null;
-    private Camera_Dialog mCameraDialog;
+    private Custom_Dialog mDialog;
 
     private String isAppRunning(Context context){
         ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
@@ -42,9 +43,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (mCameraDialog != null && mCameraDialog.mCameraSource != null) {
-            mCameraDialog.mCameraSource.release();
-        }
     }
 
 
@@ -75,7 +73,6 @@ public class MainActivity extends AppCompatActivity {
         if (grantResults.length != 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             Log.d(TAG, "Camera permission granted - initialize the camera source");
             // we have permission, so create the camerasource
-            mCameraDialog.createCameraSource();
             return;
         }
 
@@ -100,8 +97,8 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mContext = this;
-        mCameraDialog = new Camera_Dialog(this, this);
-        mBixbyService = new Catch_Bixbi_Service(mCameraDialog);
+        mBixbyService = new Catch_Bixbi_Service();
+        mDialog = new Custom_Dialog(this, this);
 
         TextView text = (TextView) findViewById(R.id.testTextView);
 
@@ -113,9 +110,8 @@ public class MainActivity extends AppCompatActivity {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-                mBixbyService.startActionFoo(mContext, mCameraDialog, "test");
+                //mBixbyService.startActionFoo(mContext, mCameraDialog, "test");
+                mDialog.show();
             }
         });
 

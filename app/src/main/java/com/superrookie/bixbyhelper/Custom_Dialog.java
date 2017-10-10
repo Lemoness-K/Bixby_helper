@@ -1,33 +1,17 @@
-/*
- * Copyright (C) The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package com.superrookie.bixbyhelper;
 
 import android.Manifest;
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
-import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
+import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
@@ -35,50 +19,84 @@ import com.google.android.gms.vision.CameraSource;
 import com.google.android.gms.vision.MultiProcessor;
 import com.google.android.gms.vision.Tracker;
 import com.google.android.gms.vision.face.Face;
-import com.google.android.gms.vision.face.FaceDetector;
 import com.superrookie.bixbyhelper.ui.camera.CameraSourcePreview;
 import com.superrookie.bixbyhelper.ui.camera.GraphicOverlay;
 
 import java.io.IOException;
 
 /**
- * Activity for the face tracker app.  This app detects faces with the rear facing camera, and draws
- * overlay graphics to indicate the position, size, and ID of each face.
+ * Created by Home on 2017-10-10.
  */
-public final class FaceTrackerActivity extends AppCompatActivity {
-    private static final String TAG = "FaceTracker";
 
-    private CameraSource mCameraSource = null;
+public class Custom_Dialog extends Dialog {
+    private Context mContext;
+    private Activity mActivity;
 
+    private CameraSource mCameraSource;
     private CameraSourcePreview mPreview;
     private GraphicOverlay mGraphicOverlay;
+
+    private int mHasPermission = 0;
 
     private static final int RC_HANDLE_GMS = 9001;
     // permission request codes need to be < 256
     private static final int RC_HANDLE_CAMERA_PERM = 2;
 
-    //==============================================================================================
-    // Activity Methods
-    //==============================================================================================
+    public Custom_Dialog(@NonNull Context context) {
+        super(context);
+        mContext = context;
+        mActivity = null;
 
-    /**
-     * Initializes the UI and initiates the creation of a face detector.
-     */
+        // setting camera
+        mPreview = (CameraSourcePreview) findViewById(R.id.preview);
+        mGraphicOverlay = (GraphicOverlay) findViewById(R.id.faceOverlay);
+
+        checkCameraPermission();
+    }
+    public Custom_Dialog(@NonNull Context context, Activity activity) {
+        super(context);
+        mContext = context;
+        mActivity = activity;
+
+        // setting camera
+        mPreview = (CameraSourcePreview) findViewById(R.id.preview);
+        mGraphicOverlay = (GraphicOverlay) findViewById(R.id.faceOverlay);
+
+        checkCameraPermission();
+    }
+
     @Override
-    public void onCreate(Bundle icicle) {
-        super.onCreate(icicle);
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
         setContentView(R.layout.camera_layer);
+        getWindow().getAttributes().windowAnimations = R.style.custom_dialog_animation;
 
-//        mPreview = (CameraSourcePreview) findViewById(R.id.preview);
-//        mGraphicOverlay = (GraphicOverlay) findViewById(R.id.faceOverlay);
+        Button btn = (Button) findViewById(R.id.camera_dialog_exit);
+        btn.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view) {
+                dismiss();
+            }
+        });
 
-        // Check for the camera permission before accessing the camera.  If the
-        // permission is not granted yet, request permission.
-        int rc = ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA);
-        if (rc == PackageManager.PERMISSION_GRANTED) {
+        // setting camera
+        if (mHasPermission == PackageManager.PERMISSION_GRANTED) {
             createCameraSource();
         } else {
             requestCameraPermission();
+        }
+    }
+
+    private void checkCameraPermission(){
+
+        // Check for the camera permission before accessing the camera.  If the
+        // permission is not granted yet, request permission.
+        mHasPermission = ActivityCompat.checkSelfPermission(mContext, Manifest.permission.CAMERA);
+        if(mHasPermission != PackageManager.PERMISSION_GRANTED){
+            Toast.makeText(mContext, "get permission of camera", Toast.LENGTH_SHORT).show();
+            requestCameraPermission();
+        }else{
+            Toast.makeText(mContext, "already have permission for camera", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -88,17 +106,17 @@ public final class FaceTrackerActivity extends AppCompatActivity {
      * sending the request.
      */
     private void requestCameraPermission() {
-        Log.w(TAG, "Camera permission is not granted. Requesting permission");
+        Log.w("FaceTracker", "Camera permission is not granted. Requesting permission");
 
         final String[] permissions = new String[]{Manifest.permission.CAMERA};
 
-        if (!ActivityCompat.shouldShowRequestPermissionRationale(this,
+        if (!ActivityCompat.shouldShowRequestPermissionRationale(mActivity,
                 Manifest.permission.CAMERA)) {
-            ActivityCompat.requestPermissions(this, permissions, RC_HANDLE_CAMERA_PERM);
+            ActivityCompat.requestPermissions(mActivity, permissions, RC_HANDLE_CAMERA_PERM);
             return;
         }
 
-        final Activity thisActivity = this;
+        final Activity thisActivity = mActivity;
 
         View.OnClickListener listener = new View.OnClickListener() {
             @Override
@@ -110,7 +128,7 @@ public final class FaceTrackerActivity extends AppCompatActivity {
 
         Snackbar.make(mGraphicOverlay, "Access to the camera is needed for detection",
                 Snackbar.LENGTH_INDEFINITE)
-                .setAction("OK", listener)
+                .setAction(R.string.ok, listener)
                 .show();
     }
 
@@ -121,13 +139,13 @@ public final class FaceTrackerActivity extends AppCompatActivity {
      */
     private void createCameraSource() {
 
-        Context context = getApplicationContext();
-        FaceDetector detector = new FaceDetector.Builder(context)
-                .setClassificationType(FaceDetector.ALL_CLASSIFICATIONS)
+        Context context = mContext;
+        com.google.android.gms.vision.face.FaceDetector detector = new com.google.android.gms.vision.face.FaceDetector.Builder(context)
+                .setClassificationType(com.google.android.gms.vision.face.FaceDetector.ALL_CLASSIFICATIONS)
                 .build();
 
         detector.setProcessor(
-                new MultiProcessor.Builder<>(new GraphicFaceTrackerFactory())
+                new MultiProcessor.Builder<>(new Custom_Dialog.GraphicFaceTrackerFactory())
                         .build());
 
         if (!detector.isOperational()) {
@@ -139,7 +157,7 @@ public final class FaceTrackerActivity extends AppCompatActivity {
             // isOperational() can be used to check if the required native library is currently
             // available.  The detector will automatically become operational once the library
             // download completes on device.
-            Log.w(TAG, "Face detector dependencies are not yet available.");
+            Log.w("FaceTracker", "Face detector dependencies are not yet available.");
         }
 
         mCameraSource = new CameraSource.Builder(context, detector)
@@ -148,85 +166,6 @@ public final class FaceTrackerActivity extends AppCompatActivity {
                 .setRequestedFps(30.0f)
                 .build();
     }
-
-    /**
-     * Restarts the camera.
-     */
-    @Override
-    protected void onResume() {
-        super.onResume();
-
-        startCameraSource();
-    }
-
-    /**
-     * Stops the camera.
-     */
-    @Override
-    protected void onPause() {
-        super.onPause();
-        mPreview.stop();
-    }
-
-    /**
-     * Releases the resources associated with the camera source, the associated detector, and the
-     * rest of the processing pipeline.
-     */
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        if (mCameraSource != null) {
-            mCameraSource.release();
-        }
-    }
-
-    /**
-     * Callback for the result from requesting permissions. This method
-     * is invoked for every call on {@link #requestPermissions(String[], int)}.
-     * <p>
-     * <strong>Note:</strong> It is possible that the permissions request interaction
-     * with the user is interrupted. In this case you will receive empty permissions
-     * and results arrays which should be treated as a cancellation.
-     * </p>
-     *
-     * @param requestCode  The request code passed in {@link #requestPermissions(String[], int)}.
-     * @param permissions  The requested permissions. Never null.
-     * @param grantResults The grant results for the corresponding permissions
-     *                     which is either {@link PackageManager#PERMISSION_GRANTED}
-     *                     or {@link PackageManager#PERMISSION_DENIED}. Never null.
-     * @see #requestPermissions(String[], int)
-     */
-    @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        if (requestCode != RC_HANDLE_CAMERA_PERM) {
-            Log.d(TAG, "Got unexpected permission result: " + requestCode);
-            super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-            return;
-        }
-
-        if (grantResults.length != 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            Log.d(TAG, "Camera permission granted - initialize the camera source");
-            // we have permission, so create the camerasource
-            createCameraSource();
-            return;
-        }
-
-        Log.e(TAG, "Permission not granted: results len = " + grantResults.length +
-                " Result code = " + (grantResults.length > 0 ? grantResults[0] : "(empty)"));
-
-        DialogInterface.OnClickListener listener = new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int id) {
-                finish();
-            }
-        };
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Face Tracker sample")
-                .setMessage("This application cannot run because it does not have the camera permission.  The application will now exit.")
-                .setPositiveButton("OK", null)
-                .show();
-    }
-
     //==============================================================================================
     // Camera Source Preview
     //==============================================================================================
@@ -236,14 +175,14 @@ public final class FaceTrackerActivity extends AppCompatActivity {
      * (e.g., because onResume was called before the camera source was created), this will be called
      * again when the camera source is created.
      */
-    private void startCameraSource() {
+    public void startCameraSource() {
 
         // check that the device has play services available.
-        int code = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(
-                getApplicationContext());
+        int code = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(mContext);
         if (code != ConnectionResult.SUCCESS) {
             Dialog dlg =
-                    GoogleApiAvailability.getInstance().getErrorDialog(this, code, RC_HANDLE_GMS);
+                    GoogleApiAvailability.getInstance().getErrorDialog(mActivity,
+                            code, RC_HANDLE_GMS);
             dlg.show();
         }
 
@@ -251,7 +190,7 @@ public final class FaceTrackerActivity extends AppCompatActivity {
             try {
                 mPreview.start(mCameraSource, mGraphicOverlay);
             } catch (IOException e) {
-                Log.e(TAG, "Unable to start camera source.", e);
+                Log.e("FaceTracker", "Unable to start camera source.", e);
                 mCameraSource.release();
                 mCameraSource = null;
             }
@@ -272,7 +211,6 @@ public final class FaceTrackerActivity extends AppCompatActivity {
             return new GraphicFaceTracker(mGraphicOverlay);
         }
     }
-
     /**
      * Face tracker for each detected individual. This maintains a face graphic within the app's
      * associated face overlay.
@@ -298,7 +236,7 @@ public final class FaceTrackerActivity extends AppCompatActivity {
          * Update the position/characteristics of the face within the overlay.
          */
         @Override
-        public void onUpdate(FaceDetector.Detections<Face> detectionResults, Face face) {
+        public void onUpdate(com.google.android.gms.vision.face.FaceDetector.Detections<Face> detectionResults, Face face) {
             mOverlay.add(mFaceGraphic);
             mFaceGraphic.updateFace(face);
         }
@@ -309,7 +247,7 @@ public final class FaceTrackerActivity extends AppCompatActivity {
          * view).
          */
         @Override
-        public void onMissing(FaceDetector.Detections<Face> detectionResults) {
+        public void onMissing(com.google.android.gms.vision.face.FaceDetector.Detections<Face> detectionResults) {
             mOverlay.remove(mFaceGraphic);
         }
 

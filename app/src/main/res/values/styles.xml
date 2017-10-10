@@ -17,4 +17,17 @@
 
     <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
 
+    <style name="custom_dialog" parent="@android:style/Theme.Dialog">
+        <item name="android:windowAnimationStyle">
+            @style/custom_dialog_animation
+        </item>
+    </style>
+
+    <style name="custom_dialog_animation">
+        <item name="android:windowEnterAnimation">@anim/slide_from_right</item>
+        <item name="android:windowExitAnimation">
+            @anim/slide_to_right
+        </item>
+    </style>
+
 </resources>

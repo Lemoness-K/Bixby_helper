@@ -22,17 +22,12 @@ public class Catch_Bixbi_Service extends IntentService {
     private static final String EXTRA_PARAM1 = "com.superrookie.bixbyhelper.extra.PARAM1";
 
     private static Context mContext = null;
-    private static Camera_Dialog mCameraDialog;
+//    private static Camera_Dialog mCameraDialog;
 
     public Catch_Bixbi_Service()
     {
         super("Catch_Bixbi_Service");
-    }
-
-    public Catch_Bixbi_Service(Camera_Dialog camera)
-    {
-        super("Catch_Bixbi_Service");
-        mCameraDialog = camera;
+//        mCameraDialog = camera;
     }
 
     /**
@@ -42,14 +37,14 @@ public class Catch_Bixbi_Service extends IntentService {
      * @see IntentService
      */
     // TODO: Customize helper method
-    public static void startActionFoo(Context context, Camera_Dialog camera, String param1) {
+    public static void startActionFoo(Context context, String param1) {
         Intent intent = new Intent(context, Catch_Bixbi_Service.class);
         intent.setAction(ACTION_FOO);
         intent.putExtra(EXTRA_PARAM1, param1);
         context.startService(intent);
 
         mContext = context;
-        mCameraDialog = camera;
+//        mCameraDialog = camera;
 
         Toast.makeText(context, "Test start", Toast.LENGTH_SHORT).show();
     }
@@ -72,7 +67,7 @@ public class Catch_Bixbi_Service extends IntentService {
     private void handleActionFoo(String param1) {
         // TODO: Handle action Foo
         Toast.makeText(mContext, "Test : " + param1, Toast.LENGTH_SHORT).show();
-        mCameraDialog.show();
+//        mCameraDialog.show();
 //        this.stopSelf();
     }
 }
