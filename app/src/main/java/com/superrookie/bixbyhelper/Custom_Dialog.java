@@ -5,10 +5,14 @@ import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
@@ -46,23 +50,39 @@ public class Custom_Dialog extends Dialog {
         super(context);
         mContext = context;
         mActivity = null;
-
-        // setting camera
-        mPreview = (CameraSourcePreview) findViewById(R.id.preview);
-        mGraphicOverlay = (GraphicOverlay) findViewById(R.id.faceOverlay);
-
         checkCameraPermission();
     }
     public Custom_Dialog(@NonNull Context context, Activity activity) {
         super(context);
         mContext = context;
         mActivity = activity;
+        checkCameraPermission();
+    }
+
+    @Override
+    public void show() {
+        super.show();
 
         // setting camera
         mPreview = (CameraSourcePreview) findViewById(R.id.preview);
         mGraphicOverlay = (GraphicOverlay) findViewById(R.id.faceOverlay);
+        startCameraSource();
+    }
 
-        checkCameraPermission();
+    @Override
+    public void hide() {
+        super.hide();
+
+        mPreview.stop();
+    }
+
+    @Override
+    public void dismiss() {
+        super.dismiss();
+
+        if(mCameraSource != null)
+            mCameraSource.release();
+        mCameraSource = null;
     }
 
     @Override
@@ -70,8 +90,15 @@ public class Custom_Dialog extends Dialog {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.camera_layer);
         getWindow().getAttributes().windowAnimations = R.style.custom_dialog_animation;
+        getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        getWindow().setGravity(Gravity.TOP);
+
+        // setting camera
+        mPreview = (CameraSourcePreview) findViewById(R.id.preview);
+        mGraphicOverlay = (GraphicOverlay) findViewById(R.id.faceOverlay);
 
         Button btn = (Button) findViewById(R.id.camera_dialog_exit);
+        btn.setBackground(new ColorDrawable(Color.TRANSPARENT));
         btn.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view) {
@@ -93,10 +120,7 @@ public class Custom_Dialog extends Dialog {
         // permission is not granted yet, request permission.
         mHasPermission = ActivityCompat.checkSelfPermission(mContext, Manifest.permission.CAMERA);
         if(mHasPermission != PackageManager.PERMISSION_GRANTED){
-            Toast.makeText(mContext, "get permission of camera", Toast.LENGTH_SHORT).show();
             requestCameraPermission();
-        }else{
-            Toast.makeText(mContext, "already have permission for camera", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -161,9 +185,10 @@ public class Custom_Dialog extends Dialog {
         }
 
         mCameraSource = new CameraSource.Builder(context, detector)
-                .setRequestedPreviewSize(1280, 960)
+                .setRequestedPreviewSize(720, 1280)
                 .setFacing(CameraSource.CAMERA_FACING_FRONT)
                 .setRequestedFps(30.0f)
+                .setAutoFocusEnabled(true)
                 .build();
     }
     //==============================================================================================

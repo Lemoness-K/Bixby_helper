@@ -1,40 +1,42 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:gravity="top"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
     android:background="@layout/dialog_style"
-    android:keepScreenOn="true" >
+    android:keepScreenOn="true"
+    android:orientation="vertical">
 
     <TextView
-        android:layout_width="match_parent"
+        android:id="@+id/dialog_title"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
+        android:paddingTop="10dp"
+        android:paddingBottom="10dp"
         android:text="@string/dialog_title"
-        android:textAlignment="center"
-        android:id="@+id/dialog_title"/>
+        android:textSize="25dp"
+        android:textAlignment="center" />
 
     <com.superrookie.bixbyhelper.ui.camera.CameraSourcePreview
         android:id="@+id/preview"
-        android:layout_width="320dp"
-        android:layout_height="240dp"
-        android:layout_gravity="center_horizontal"
-        android:layout_margin="3dp">
+        android:layout_width="wrap_content"
+        android:layout_height="384dp"
+        android:layout_margin="2dp">
 
         <com.superrookie.bixbyhelper.ui.camera.GraphicOverlay
             android:id="@+id/faceOverlay"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_gravity="center_horizontal" />
+            android:layout_gravity="center_horizontal|fill_horizontal" />
 
     </com.superrookie.bixbyhelper.ui.camera.CameraSourcePreview>
 
     <Button
+        android:id="@+id/camera_dialog_exit"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        android:id="@+id/camera_dialog_exit"
+        android:layout_gravity="right"
+        android:textColor="@color/colorPrimary"
         android:text="close" />
 
 </LinearLayout>

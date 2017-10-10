@@ -9,6 +9,6 @@
     <solid android:color="#ffffff" />
     <!-- 라인색 및 두께 -->
     <stroke
-        android:width="3dp"
+        android:width="2dp"
         android:color="#999999" />
 </shape>
